@@ -1,10 +1,12 @@
 Order Management System with Temporal & Spring Boot
-A robust, resilient, and distributed order management microservice architecture built with Spring Boot 3.3.3, Temporal Java SDK 1.24.0, PostgreSQL, and Apache Kafka. It implements advanced orchestration patterns including the Saga Pattern, Asynchronous processing, Signals, Queries, Child Workflows, and Cron-based automated jobs.
+A robust, resilient, and distributed order management microservice architecture built with Spring Boot 4.1.1, Temporal
+Java SDK 1.31.0, PostgreSQL, and Apache Kafka. It implements advanced orchestration patterns including the Saga Pattern,
+Asynchronous processing, Signals, Queries, Child Workflows, and Cron-based automated jobs.
 
 Tech Stack
-Backend Framework: Spring Boot 3.3.3 (Java 21)
+Backend Framework: Spring Boot 4.1.1 (Java 21)
 
-Orchestration Engine: Temporal Java SDK 1.24.0
+Orchestration Engine: Temporal Java SDK 1.31.0
 
 Database: PostgreSQL (Persistence for Temporal server and application data)
 
@@ -13,13 +15,17 @@ Messaging: Spring Kafka (Event-driven workflow triggers)
 Utilities: Lombok, Spring Web & Data JPA
 
 Architecture & Core Features
-Saga Pattern & Compensation: Automatically handles distributed transaction rollbacks (e.g., executing payment refunds if inventory reservation fails or the user rejects the order).
+Saga Pattern & Compensation: Automatically handles distributed transaction rollbacks (e.g., executing payment refunds if
+inventory reservation fails or the user rejects the order).
 
-Asynchronous REST Processing: Non-blocking endpoints returning 202 Accepted while workflows execute safely in the background.
+Asynchronous REST Processing: Non-blocking endpoints returning 202 Accepted while workflows execute safely in the
+background.
 
-Signals & Queries: Interactive workflow control via external signals (approveOrder, rejectOrder) and real-time state inspection via Queries (getOrderStatus).
+Signals & Queries: Interactive workflow control via external signals (approveOrder, rejectOrder) and real-time state
+inspection via Queries (getOrderStatus).
 
-Child Workflows: Modularized subprocess execution (ShippingWorkflow running independently inside the main OrderWorkflow).
+Child Workflows: Modularized subprocess execution (ShippingWorkflow running independently inside the main
+OrderWorkflow).
 
 Event-Driven Starters: Automatically triggers workflows via Kafka message listeners (order-created-events).
 
