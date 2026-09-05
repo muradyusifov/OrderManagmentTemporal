@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: OrderManagmentTemporal
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: temporal
+    password: temporal
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  temporal:
+    connection:
+      target: 127.0.0.1:7233
+    workers:
+      - task-queue: ORDER_TASK_QUEUE
