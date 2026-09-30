@@ -1,7 +1,7 @@
 package com.example.ordermanagmenttemporal.controller;
 
+import com.example.ordermanagmenttemporal.config.TaskQueues;
 import com.example.ordermanagmenttemporal.flow.OrderWorkflow;
-import com.example.ordermanagmenttemporal.flow.ReportWorkflow;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import org.springframework.http.ResponseEntity;
@@ -17,85 +17,53 @@ public class OrderController {
         this.workflowClient = workflowClient;
     }
 
+    /**
+     * Starts the order workflow asynchronously. The workflow waits for an approve/reject signal,
+     * so a synchronous call here would block the HTTP request until someone approves the order.
+     */
     @PostMapping("/{id}")
     public ResponseEntity<String> createOrder(@PathVariable String id, @RequestParam double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero.");
+        }
+
         OrderWorkflow workflow = workflowClient.newWorkflowStub(
                 OrderWorkflow.class,
                 WorkflowOptions.newBuilder()
-                        .setWorkflowId("Order-" + id)
-                        .setTaskQueue("ORDER_TASK_QUEUE")
-                        .build()
-        );
-
-        String result = workflow.processOrder(id, amount);
-        return ResponseEntity.ok(result);
-    }
-
-    @PostMapping("/{id}/async")
-    public ResponseEntity<String> createOrderAsync(@PathVariable String id, @RequestParam double amount) {
-        OrderWorkflow workflow = workflowClient.newWorkflowStub(
-                OrderWorkflow.class,
-                WorkflowOptions.newBuilder()
-                        .setWorkflowId("Order-" + id)
-                        .setTaskQueue("ORDER_TASK_QUEUE")
+                        .setWorkflowId(workflowId(id))
+                        .setTaskQueue(TaskQueues.ORDER_TASK_QUEUE)
                         .build()
         );
 
         WorkflowClient.start(workflow::processOrder, id, amount);
 
         return ResponseEntity.accepted()
-                .body("Order accepted and started in the background: Order-" + id);
+                .body("Order accepted and started in the background: " + workflowId(id));
     }
 
     @PostMapping("/{id}/approve")
     public ResponseEntity<String> approveOrder(@PathVariable String id) {
-        OrderWorkflow workflow = workflowClient.newWorkflowStub(
-                OrderWorkflow.class,
-                "Order-" + id
-        );
-
-        workflow.approveOrder();
-
+        existingWorkflow(id).approveOrder();
         return ResponseEntity.ok("Approval signal sent!");
     }
 
     @PostMapping("/{id}/reject")
     public ResponseEntity<String> rejectOrder(@PathVariable String id) {
-        OrderWorkflow workflow = workflowClient.newWorkflowStub(
-                OrderWorkflow.class,
-                "Order-" + id
-        );
-
-        workflow.rejectOrder();
-
+        existingWorkflow(id).rejectOrder();
         return ResponseEntity.ok("Rejection signal sent!");
     }
 
     @GetMapping("/{id}/status")
     public ResponseEntity<String> getOrderStatus(@PathVariable String id) {
-        OrderWorkflow workflow = workflowClient.newWorkflowStub(
-                OrderWorkflow.class,
-                "Order-" + id
-        );
-
-        String status = workflow.getOrderStatus();
-
+        String status = existingWorkflow(id).getOrderStatus();
         return ResponseEntity.ok("Current Order Status: " + status);
     }
 
-    @PostMapping("/schedule")
-    public ResponseEntity<String> startCronWorkflow() {
-        ReportWorkflow workflow = workflowClient.newWorkflowStub(
-                ReportWorkflow.class,
-                WorkflowOptions.newBuilder()
-                        .setWorkflowId("Daily-Report-Cron-Job")
-                        .setTaskQueue("REPORT_TASK_QUEUE")
-                        .setCronSchedule("0 0 * * *")
-                        .build()
-        );
+    private OrderWorkflow existingWorkflow(String id) {
+        return workflowClient.newWorkflowStub(OrderWorkflow.class, workflowId(id));
+    }
 
-        WorkflowClient.start(workflow::generateDailyReport);
-
-        return ResponseEntity.ok("Cron Workflow scheduled successfully!");
+    private static String workflowId(String id) {
+        return "Order-" + id;
     }
 }

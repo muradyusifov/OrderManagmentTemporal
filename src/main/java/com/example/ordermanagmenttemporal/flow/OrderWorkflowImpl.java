@@ -1,20 +1,25 @@
 package com.example.ordermanagmenttemporal.flow;
 
 import com.example.ordermanagmenttemporal.activities.OrderActivities;
+import com.example.ordermanagmenttemporal.config.TaskQueues;
 import io.temporal.activity.ActivityOptions;
 import io.temporal.common.RetryOptions;
 import io.temporal.spring.boot.WorkflowImpl;
+import io.temporal.workflow.ChildWorkflowOptions;
 import io.temporal.workflow.Saga;
 import io.temporal.workflow.Workflow;
+import org.slf4j.Logger;
 
 import java.time.Duration;
 
-@WorkflowImpl(taskQueues = "ORDER_TASK_QUEUE")
+@WorkflowImpl(taskQueues = TaskQueues.ORDER_TASK_QUEUE)
 public class OrderWorkflowImpl implements OrderWorkflow {
 
+    private static final Logger log = Workflow.getLogger(OrderWorkflowImpl.class);
+
     private boolean isApproved = false;
-    private String currentStatus = "INITIALIZED";
     private boolean isRejected = false;
+    private String currentStatus = "INITIALIZED";
 
     private final OrderActivities activities = Workflow.newActivityStub(
             OrderActivities.class,
@@ -54,12 +59,15 @@ public class OrderWorkflowImpl implements OrderWorkflow {
             activities.reserveInventory(orderId);
 
             currentStatus = "ARRANGING_SHIPPING";
-            ShippingWorkflow shippingWorkflow =
-                    Workflow.newChildWorkflowStub(ShippingWorkflow.class);
+            ShippingWorkflow shippingWorkflow = Workflow.newChildWorkflowStub(
+                    ShippingWorkflow.class,
+                    ChildWorkflowOptions.newBuilder()
+                            .setWorkflowId("Shipping-" + orderId)
+                            .build()
+            );
 
             String shippingResult = shippingWorkflow.arrangeShipping(orderId);
-
-            System.out.println("Result received by the parent workflow: " + shippingResult);
+            log.info("Result received by the parent workflow: {}", shippingResult);
 
             currentStatus = "COMPLETED";
             return "Order and Shipping Completed Successfully";
@@ -75,12 +83,18 @@ public class OrderWorkflowImpl implements OrderWorkflow {
 
     @Override
     public void approveOrder() {
-        this.isApproved = true;
+        // Ignore approval if the order was already rejected
+        if (!isRejected) {
+            this.isApproved = true;
+        }
     }
 
     @Override
     public void rejectOrder() {
-        this.isRejected = true;
+        // Ignore rejection if the order was already approved
+        if (!isApproved) {
+            this.isRejected = true;
+        }
     }
 
     @Override

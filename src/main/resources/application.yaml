@@ -13,8 +13,14 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: temporal-order-group
+      auto-offset-reset: earliest
   temporal:
     connection:
       target: 127.0.0.1:7233
-    workers:
-      - task-queue: ORDER_TASK_QUEUE
+    workers-auto-discovery:
+      packages:
+        - com.example.ordermanagmenttemporal

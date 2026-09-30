@@ -32,10 +32,12 @@ Event-Driven Starters: Automatically triggers workflows via Kafka message listen
 Scheduled/Cron Workflows: Server-managed periodic task execution (ReportWorkflow).
 
 Prerequisites & Infrastructure
-Ensure you have Docker and Docker Compose installed to run the local Temporal server and PostgreSQL backend.
+Ensure you have Docker and Docker Compose installed to run the local Temporal server, PostgreSQL and Kafka.
+
+Run everything: docker compose up --build
 
 API Endpoints
-Create Order (Async): POST /orders/{id}?amount={amount}
+Create Order (Async, returns 202): POST /orders/{id}?amount={amount}
 
 Check Status (Query): GET /orders/{id}/status
 
@@ -44,3 +46,8 @@ Approve Order (Signal): POST /orders/{id}/approve
 Reject Order (Signal): POST /orders/{id}/reject
 
 Schedule Cron Report: POST /reports/schedule
+
+Kafka Event
+Topic: order-created-events
+
+Message format (JSON): {"orderId": "101", "amount": 250.0}

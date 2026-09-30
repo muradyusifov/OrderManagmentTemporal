@@ -1,5 +1,6 @@
 package com.example.ordermanagmenttemporal.exception;
 
+import io.temporal.client.WorkflowExecutionAlreadyStarted;
 import io.temporal.client.WorkflowNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,18 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkflowExecutionAlreadyStarted.class)
+    public ResponseEntity<ErrorResponse> handleAlreadyStarted(WorkflowExecutionAlreadyStarted ex) {
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "A workflow with this ID is already running."
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -48,4 +61,4 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-}
+}
